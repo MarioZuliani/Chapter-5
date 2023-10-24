@@ -1,0 +1,40 @@
+,common_name,factor,scientific_name,captures,total,percent_presence
+1,Bewick's Wren,Mimic,Thryomanes bewickii,1,1,1
+2,Black-tailed Jackrabbit,Mimic,Lepus californicus,18,54,0.333333333
+3,Black-tailed Jackrabbit,Shrub,Lepus californicus,9,54,0.166666667
+4,Black-tailed Jackrabbit,Open,Lepus californicus,27,54,0.5
+5,California Ground Squirrel,Shrub,Otospemophilus beecheyi,1,2,0.5
+6,California Ground Squirrel,Mimic,Otospemophilus beecheyi,1,2,0.5
+7,California Pocket Mouse,Mimic,Chaetodipus californicus,3,3,1
+8,California Quail,Mimic,Callipepla californica,10,10,1
+9,Cassin's Kingbird,Mimic,Tyrannus vociferans,2,2,1
+10,Common Poorwill,Mimic,Phalaenoptilus nuttallii,1,1,1
+11,Common Raven,Shrub,Corvus corax,14,50,0.28
+12,Common Raven,Open,Corvus corax,26,50,0.52
+13,Common Raven,Mimic,Corvus corax,10,50,0.2
+14,Coyote,Shrub,Canis latrans,3,30,0.1
+15,Coyote,Mimic,Canis latrans,15,30,0.5
+16,Coyote,Open,Canis latrans,12,30,0.4
+17,Desert Cottontail,Shrub,Sylvilagus audubonii,1,20,0.05
+18,Desert Cottontail,Open,Sylvilagus audubonii,9,20,0.45
+19,Desert Cottontail,Mimic,Sylvilagus audubonii,10,20,0.5
+20,Giant Kangaroo Rat,Mimic,Dipodomys ingens,12,13,0.923076923
+21,Giant Kangaroo Rat,Open,Dipodomys ingens,1,13,0.076923077
+22,Heermann's Kangaroo Rat,Open,Dipodomys heermanni,621,1550,0.400645161
+23,Heermann's Kangaroo Rat,Shrub,Dipodomys heermanni,203,1550,0.130967742
+24,Heermann's Kangaroo Rat,Mimic,Dipodomys heermanni,726,1550,0.468387097
+25,Horned Lark,Open,Eremophila alpestris,1,14,0.071428571
+26,Horned Lark,Mimic,Eremophila alpestris,13,14,0.928571429
+27,Kit Fox,Open,Vulpes macrotis,18,39,0.461538462
+28,Kit Fox,Mimic,Vulpes macrotis,21,39,0.538461538
+29,Loggerhead Shrike,Open,Lanius ludovicianus,3,70,0.042857143
+30,Loggerhead Shrike,Shrub,Lanius ludovicianus,3,70,0.042857143
+31,Loggerhead Shrike,Mimic,Lanius ludovicianus,64,70,0.914285714
+33,Mourning Dove,Mimic,Zenaida macroura,4,4,1
+34,Nelson's Antelope Squirrel,Mimic,Ammospermophilus nelsoni,148,218,0.678899083
+35,Nelson's Antelope Squirrel,Open,Ammospermophilus nelsoni,67,218,0.30733945
+36,Nelson's Antelope Squirrel,Shrub,Ammospermophilus nelsoni,3,218,0.013761468
+37,Red-tailed Hawk,Mimic,Buteo jamaicensis,3,3,1
+38,Salinas Pocket Mouse,Mimic,Perognathus inornatus,4,4,1
+39,Say's Phoebe,Open,Sayornis saya,1,1,1
+40,Song Sparrow,Mimic,Melospiza melodia,2,2,1
