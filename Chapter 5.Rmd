@@ -100,7 +100,7 @@ plot1
 ```{r}
 ### Determine animal abundance at each site (This will also help with PCOA)
 photo_final <- photo  %>% filter(common_name != "Blank")  %>% filter(common_name != "No CV Result") %>% filter(common_name != "Mammal")
-Total_Observations_factors <- photo_final %>% group_by(site_code, factor) %>% summarise(total = sum(animal.hit))
+Total_Observations_factors <- photo_final %>% group_by(site_code, factor, microsite_number) %>% summarise(total = sum(animal.hit))
 ```
 
 ```{r}
@@ -110,16 +110,101 @@ animals_density <- animals_density %>% filter(common_name != "Blank")
 
 
 ```{r}
+library(dplyr)
 ### Geolocated Shrub Density setup and cleanup.
 Cuyama_shrubs <- read.csv("Cuyama.csv")
 Cuyama_shrubs <- Cuyama_shrubs %>% filter(site_code != "Cuyama_2") %>% filter(site_code != "Cuyama_4") %>% filter(site_code != "Cuyama_5") %>% filter(site_code != "Cuyama_6")
 
 Carrizo_shrubs <- read.csv("Carrizo.csv")
 Carrizo_shrubs <- Carrizo_shrubs %>% filter(site_code != "Carrizo_1")%>% filter(site_code != "Carrizo_2")%>% filter(site_code != "Carrizo_3")%>% filter(site_code != "Carrizo_4")%>% filter(site_code != "Carrizo_5")%>% filter(site_code != "Carrizo_6")%>% filter(site_code != "Carrizo_7")
+
+shrubs <- rbind(Carrizo_shrubs, Cuyama_shrubs)
 ```
 
 ```{r}
 ### Combine site level data with geolocated data to determine the shrub density around each mimic, shrub and open area. Use Lizard code!!!
+library(tidyverse)
+library(sf)
+library(RColorBrewer)
+library(scales)
+#set key attributes####
+x = 4326 #crs for first spatial df
+y = 4326 #crs for second spatial df
+z = 20 #set buffer is using a join to point data SET FOR 20M
 
+shrubs <- shrubs %>% 
+  st_as_sf(coords=c("long","lat"), crs = x, remove=FALSE) %>% 
+  st_transform(32610) #crs = 32610 is UTM and will return distances in meters
+
+site <- read_csv("Chpt5_Site_Data.csv") %>% 
+  st_as_sf(coords=c("long","lat"), crs = y, remove=FALSE) %>% 
+  st_transform(32610) #crs = 32610 is UTM and will return distances in meters
+
+buffer <- st_buffer(site, z) #decide on spatial scale
+joined.xy <- st_intersection(buffer, shrubs)
+
+joined.xy <- joined.xy %>% 
+  group_by(rep) %>% 
+  summarize(n_shrubs = n()) %>% 
+  st_drop_geometry
+
+tidy_all <- left_join(site, joined.xy, by = "rep") %>% 
+  dplyr::mutate(n_shrubs = replace_na(n_shrubs, 0))
+
+max(tidy_all$n_shrubs) #checks ecological viability
+min(tidy_all$n_shrubs) #checks ecological viability
+sum(tidy_all$n_shrubs) #checks positive co-occurrences
+nrow(buffer) - nrow(tidy_all) #ensure that tidy dataframe comprised all buffers
+
+#write data AS tidy_20m
+#write.csv(tidy_all, file = "tidy_20m.csv")
+library(dplyr)
+tidy_20m <- read.csv("tidy_20m.csv")%>%
+  distinct(rep, .keep_all = TRUE)
+###write.csv(tidy_20m, file = "tidy_20m.csv")
+###THIS SHOULD BE ALL CLEANED UP AND NOW WORK!!!
+```
+```{r}
+### PCOA
+library(vegan)
+library(ape)
+
+animals_density_final <- photo_final %>% group_by(site_code,factor,microsite_number, common_name) %>% summarise(captures = sum(animal.hit))
+
+pca_data_final <- animals_density_final ### Created new df for pca data
+pca_data_final <- pca_data_final %>%
+  spread(common_name, captures) %>%
+  ungroup() %>%
+  dplyr::select(-site_code, -factor, -microsite_number) %>%
+  replace(is.na(.),0)
+dim(pca_data_final)
+
+env_final <- read.csv("environment.csv") ### Drop Tecopa open 1, Tecopa open 4, since they have no animal observations.
+dim(env_final)
+
+model010 <- adonis(pca_data_final ~ factor*shrub_density, data = env_final)
+model010
+
+dist_final <- vegdist(pca_data_final, species = "bray")
+res_final <- pcoa(dist_final)
+p02 <- as.data.frame(res_final$vectors)%>%
+  dplyr::select(Axis.1, Axis.2) %>%
+  bind_cols(env_final,.)
+
+pcoa_final <- ggplot(p02, aes(Axis.1, Axis.2, group = factor)) +
+  geom_point(aes(color = factor)) +
+  geom_text(aes(label=site.number), hjust = 0, vjust = 0, check_overlap = TRUE, nudge_x = 0.01)+
+  scale_color_brewer(palette = "Set1") + theme_classic() + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5), axis.text = element_text(size = 10)) +
+  labs(color = "factor")
+
+pcoa_final
+
+model020 <- betadisper(dist_final, env_final$factor)
+model020
+anova(model020)
+permutest(model020,pairwise = TRUE, permutations = 99)
+model020.HSD <- TukeyHSD(model020)
+model020.HSD
+boxplot(model020)
 ```
 
