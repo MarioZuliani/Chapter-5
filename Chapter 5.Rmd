@@ -217,16 +217,18 @@ boxplot(model020)
 ```{r}
 ### Clean up and add abundance to df
 library(stringr)
+photo <- read.csv("observations.csv")
 colnames(tidy_20m)[4] <- "microsite_number"
 tidy_20m <- tidy_20m %>%
   mutate(factor = str_to_title(factor))
-df <- merge(photo, tidy_20m, by = c("site_code", "factor", "microsite_number"))
-colnames(df)[4] <- "rep"
-colnames(df)[5] <- "abundance"
-colnames(df)[9] <- "shrub_density"
+df <- merge(Total_Observations_factors, tidy_20m, by = c("site_code", "factor", "microsite_number"))
+
+colnames(df)[4] <- "abundance"
+colnames(df)[5] <- "rep"
+colnames(df)[10] <- "shrub_density"
 
 df <- df %>%
-  dplyr::select(-rep.y, -functioned)
+  dplyr::select(-functioned)
 df <- df %>%
   dplyr::select(rep, everything())
 df <- df %>%
@@ -287,6 +289,12 @@ print(summary(anova_result))
 emmeans_result <- emmeans(anova_result, pairwise ~ factor) ### Mimic Significantly cooler than open areas!
 print(emmeans_result)
 ```
+```{r}
+### Final Data Frame
+#write.csv(df, file = "tidy_mimic_experiment.csv")
+```
+
+
 ### Stats and Data Viz
 ```{r}
 ### use df as final dataframe since it has all required data.
