@@ -412,3 +412,31 @@ print(evenness_emmeans_result)
 dispersion_test_evenness <- dispersiontest(model3)
 print(dispersion_test_evenness)
 ```
+```{r}
+### Abundance v Shrub Density
+abundance_density <- ggplot(df, aes(shrub_density, abundance, color = microsite)) +
+  geom_point(size = 0.5) +
+  scale_color_brewer(palette = "Set1") +
+  labs(x = "Shrub Density", y = "Animal Abundance") + theme_classic() + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5),legend.position = "none",legend.title = element_blank(), axis.text = element_text(size = 10)) +
+  geom_smooth(method = lm, se = TRUE) + theme(axis.title.x = element_blank()) + labs(tag = "A")
+abundance_density
+```
+```{r}
+### richness v density
+richness_density <- ggplot(df, aes(shrub_density, richness, color = microsite)) +
+  geom_point(size = 0.5) +
+  scale_color_brewer(palette = "Set1") +
+  labs(x = "Shrub Density", y = "Richness") + theme_classic() + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5),legend.position = "none",legend.title = element_blank(), axis.text = element_text(size = 10)) +
+  geom_smooth(method = lm, se = TRUE) + theme(axis.title.x = element_blank()) + labs(tag = "B")
+richness_density
+```
+```{r}
+### Evenness v density
+evenness_density <- ggplot(df, aes(shrub_density, evenness, color = microsite)) +
+  geom_point(size = 0.5) +
+  scale_color_brewer(palette = "Set1") +
+  labs(x = "Shrub Density", y = "Richness") + theme_classic() + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5),legend.position = "none",legend.title = element_blank(), axis.text = element_text(size = 10)) +
+  geom_smooth(method = lm, se = TRUE) + theme(axis.title.x = element_blank()) + labs(tag = "B")
+evenness_density
+```
+
