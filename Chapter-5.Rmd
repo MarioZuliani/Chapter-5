@@ -1,0 +1,405 @@
+---
+title: "Chapter 5"
+author: "Mario Zuliani"
+date: "2023-10-17"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Load Packages
+```{r}
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+library(meta)
+library(PRISMAstatement)
+library(skimr)
+library(MASS)
+library(ggpubr)
+```
+### Clean observation data
+```{r}
+### Load and clean up dirty data
+#photo <- read.csv("observations.csv")
+#photo <- photo %>%
+ # filter(common_name != "Human")
+#photo <- photo %>%
+ # filter(common_name != "Human-Camera Trapper")
+#photo <- photo %>%
+ # filter(common_name != "Domestic Dog")
+#photo <- photo %>%
+ # filter(common_name != "Vehicle")
+#photo <- photo %>%
+#  dplyr::filter(common_name != "Insect")
+#photo <- photo %>%
+ # dplyr::filter(common_name != "Animal")
+#photo <- photo %>%
+#  dplyr::filter(common_name != "Bird")
+#photo <- photo %>%
+ # filter(common_name != "No CV Result")
+
+#count.hit <- photo %>%
+ # count(animal.hit) %>%
+ # na.omit()
+#summary(count.hit)
+
+
+### 0.489% capture rate
+```
+```{r}
+### Total Observations is species list!
+#Total_Observations <- photo %>% group_by(common_name) %>% summarise(total = sum(animal.hit)) %>% filter(common_name != "Blank")  %>% filter(common_name != "No CV Result") %>% filter(common_name != "Mammal")
+
+#animals_by_factor <- photo %>% group_by(factor,common_name, scientific_name) %>% summarise(captures = sum(animal.hit))
+#animals_by_factor <- animals_by_factor %>% filter(common_name != "Blank")  %>% filter(common_name != "No CV Result")
+
+
+#factor_obvs <- merge(animals_by_factor, Total_Observations, all = TRUE)
+#factor_obvs$percent_presence <- factor_obvs$captures/factor_obvs$total
+```
+```{r}
+### Rought version of percent proportion figure.
+#write.csv(factor_obvs, file = "scientific.csv")
+scientific <- read.csv("scientific.csv")
+#plot1 <- ggplot(scientific, aes(scientific_name, percent_presence, fill = factor)) + geom_bar(stat = "identity") + coord_flip() + theme_classic() + scale_x_discrete(limits=rev) + xlab("Species") + ylab("Percent Proportion") + labs(fill = "factor")
+
+#plot1 + scale_fill_manual(values = c("#009900", "#0066cc", "#8B0000")) + scale_x_discrete(limits = rev(levels(factor_obvs$scientific_name))) 
+```
+```{r}
+### This figure works well!
+library(dplyr)
+library(ggplot2)
+
+# Calculate the total counts of each species
+scientific <- scientific %>%
+  group_by(scientific_name, factor) %>%
+  summarize(total_counts = sum(percent_presence))
+
+# Create a custom order based on percent presence
+custom_order <- scientific %>%
+  arrange(factor, -total_counts) %>%
+  pull(scientific_name)
+
+# Create a numeric variable to represent the custom order
+scientific <- scientific %>%
+  mutate(order_var = match(scientific_name, custom_order))
+
+# Create the bar plot with custom x-axis order
+plot1 <- ggplot(scientific, aes(factor(order_var), total_counts, fill = factor)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  theme_classic() +
+  xlab("Species") +
+  ylab("Percent Proportion") +
+  labs(fill = "Factor") +
+  scale_fill_manual(values = c("#009900", "#0066cc", "#8B0000")) +
+  scale_x_continuous(breaks = 1:length(custom_order), labels = custom_order) + scale_x_discrete(labels = custom_order)
+
+plot1
+```
+```{r}
+### Determine animal abundance at each site (This will also help with PCOA)
+#photo_final <- photo  %>% filter(common_name != "Blank")  %>% filter(common_name != "No CV Result") %>% filter(common_name != "Mammal")
+#write.csv(photo_final, file = "observations.csv") ### Use this as final data
+photo_final <- read.csv("observations.csv")
+Total_Observations_factors <- photo_final %>% group_by(site_code, factor, microsite_number) %>% summarise(total = sum(animal_hit))
+
+
+```
+
+```{r}
+#animals_density <- photo %>% group_by(site_code,factor, common_name, microsite_number) %>% summarise(captures = sum(animal.hit))
+#animals_density <- animals_density %>% filter(common_name != "Blank")
+```
+
+
+```{r}
+library(dplyr)
+### Geolocated Shrub Density setup and cleanup.
+Cuyama_shrubs <- read.csv("Cuyama.csv")
+Cuyama_shrubs <- Cuyama_shrubs %>% filter(site_code != "Cuyama_2") %>% filter(site_code != "Cuyama_4") %>% filter(site_code != "Cuyama_5") %>% filter(site_code != "Cuyama_6")
+
+Carrizo_shrubs <- read.csv("Carrizo.csv")
+Carrizo_shrubs <- Carrizo_shrubs %>% filter(site_code != "Carrizo_1")%>% filter(site_code != "Carrizo_2")%>% filter(site_code != "Carrizo_3")%>% filter(site_code != "Carrizo_4")%>% filter(site_code != "Carrizo_5")%>% filter(site_code != "Carrizo_6")%>% filter(site_code != "Carrizo_7")
+
+shrubs <- rbind(Carrizo_shrubs, Cuyama_shrubs)
+```
+
+```{r}
+### Combine site level data with geolocated data to determine the shrub density around each mimic, shrub and open area. Use Lizard code!!!
+library(tidyverse)
+library(sf)
+library(RColorBrewer)
+library(scales)
+#set key attributes####
+x = 4326 #crs for first spatial df
+y = 4326 #crs for second spatial df
+z = 20 #set buffer is using a join to point data SET FOR 20M
+
+shrubs <- shrubs %>% 
+  st_as_sf(coords=c("long","lat"), crs = x, remove=FALSE) %>% 
+  st_transform(32610) #crs = 32610 is UTM and will return distances in meters
+
+site <- read_csv("Chpt5_Site_Data.csv") %>% 
+  st_as_sf(coords=c("long","lat"), crs = y, remove=FALSE) %>% 
+  st_transform(32610) #crs = 32610 is UTM and will return distances in meters
+
+buffer <- st_buffer(site, z) #decide on spatial scale
+joined.xy <- st_intersection(buffer, shrubs)
+
+joined.xy <- joined.xy %>% 
+  group_by(rep) %>% 
+  summarize(n_shrubs = n()) %>% 
+  st_drop_geometry
+
+tidy_all <- left_join(site, joined.xy, by = "rep") %>% 
+  dplyr::mutate(n_shrubs = replace_na(n_shrubs, 0))
+
+max(tidy_all$n_shrubs) #checks ecological viability
+min(tidy_all$n_shrubs) #checks ecological viability
+sum(tidy_all$n_shrubs) #checks positive co-occurrences
+nrow(buffer) - nrow(tidy_all) #ensure that tidy dataframe comprised all buffers
+
+#write data AS tidy_20m
+#write.csv(tidy_all, file = "tidy_20m.csv")
+library(dplyr)
+tidy_20m <- read.csv("tidy_20m.csv")%>%
+  distinct(rep, .keep_all = TRUE)
+###write.csv(tidy_20m, file = "tidy_20m.csv")
+###THIS SHOULD BE ALL CLEANED UP AND NOW WORK!!!
+```
+```{r}
+### PCOA
+library(vegan)
+library(ape)
+
+animals_density_final <- photo_final %>% group_by(site_code,factor,microsite_number, common_name) %>% summarise(captures = sum(animal_hit))
+
+pca_data_final <- animals_density_final ### Created new df for pca data
+pca_data_final <- pca_data_final %>%
+  spread(common_name, captures) %>%
+  ungroup() %>%
+  dplyr::select(-site_code, -factor, -microsite_number) %>%
+  replace(is.na(.),0)
+dim(pca_data_final)
+
+env_final <- read.csv("environment.csv") ### Drop Tecopa open 1, Tecopa open 4, since they have no animal observations.
+dim(env_final)
+
+model010 <- adonis(pca_data_final ~ factor*shrub_density, data = env_final)
+model010
+
+dist_final <- vegdist(pca_data_final, species = "bray")
+res_final <- pcoa(dist_final)
+p02 <- as.data.frame(res_final$vectors)%>%
+  dplyr::select(Axis.1, Axis.2) %>%
+  bind_cols(env_final,.)
+
+pcoa_final <- ggplot(p02, aes(Axis.1, Axis.2, group = factor)) +
+  geom_point(aes(color = factor)) +
+  geom_text(aes(label=site.number), hjust = 0, vjust = 0, check_overlap = TRUE, nudge_x = 0.01)+
+  scale_color_brewer(palette = "Set1") + theme_classic() + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5), axis.text = element_text(size = 10)) +
+  labs(color = "factor")
+
+pcoa_final
+
+model020 <- betadisper(dist_final, env_final$factor)
+model020
+anova(model020)
+permutest(model020,pairwise = TRUE, permutations = 99)
+model020.HSD <- TukeyHSD(model020)
+model020.HSD
+boxplot(model020)
+```
+```{r}
+### Clean up and add abundance to df
+library(stringr)
+photo <- read.csv("observations.csv")
+colnames(tidy_20m)[4] <- "microsite_number"
+tidy_20m <- tidy_20m %>%
+  mutate(factor = str_to_title(factor))
+df <- merge(Total_Observations_factors, tidy_20m, by = c("site_code", "factor", "microsite_number"))
+
+colnames(df)[4] <- "abundance"
+colnames(df)[5] <- "rep"
+colnames(df)[10] <- "shrub_density"
+
+df <- df %>%
+  dplyr::select(-functioned)
+df <- df %>%
+  dplyr::select(rep, everything())
+df <- df %>%
+  dplyr::select(-abundance, everything())
+```
+
+```{r}
+### Calculate Richness across the tested sites
+density_simple_2023 <- animals_density_final %>%
+  group_by(site_code, factor, microsite_number) %>%
+  summarise(animals = sum(captures), richness = n())
+richness <- density_simple_2023 %>%
+  dplyr::select(-animals)
+
+df <- merge(df, richness, by = c("site_code", "factor", "microsite_number"))
+
+```
+
+```{r}
+### Evenness Data
+evenness_results <- animals_density_final %>%
+  group_by(site_code, factor, microsite_number) %>%
+  summarize(evenness = diversity(captures, index = "shannon")) ### This worked 100x better than Vegan!!!
+
+df <- merge(df, evenness_results, by = c("site_code", "factor", "microsite_number"))
+
+#write.csv(df, file = "Dataframe.csv")
+df <- read.csv("Dataframe.csv")
+```
+
+```{r}
+### Handheld Temp Data
+handheld_temp <- read.csv("Chapter5_Temp_Data.csv")
+colnames(handheld_temp)[5] <- "microsite_number"
+colnames(handheld_temp)[8] <- "ground_temp"
+
+handheld_temp <- handheld_temp %>%
+  group_by(site_code, factor, microsite_number ) %>%
+  summarise(mean_ambient_temp = mean(temp), mean_rh = mean(rh), mean_ground_temp = mean(ground_temp))
+
+handheld_temp <- handheld_temp %>%
+  mutate(factor = str_to_title(factor))
+
+df <- merge(df, handheld_temp, by = c("site_code", "factor", "microsite_number"))
+
+colnames(df)[7] <- "pendant_ID"
+colnames(df)[8] <- "shrub_density"
+
+```
+
+```{r}
+### Pendant Temp and test if temp is significant compared across factors
+library(emmeans)
+pendant_temp <- read.csv("Temp_Final.csv")
+pendant_temp <- pendant_temp %>%
+  group_by(site_code, factor, microsite_number) %>%
+  summarise(mean_pendant_temp = mean(temp))
+
+anova_result <- aov(mean_pendant_temp ~ factor, data = pendant_temp) ### Temp is significant.
+print(summary(anova_result))
+
+emmeans_result <- emmeans(anova_result, pairwise ~ factor) ### Mimic Significantly cooler than open areas!
+print(emmeans_result)
+```
+```{r}
+### Final Data Frame
+#write.csv(df, file = "tidy_mimic_experiment.csv")
+```
+
+
+### Stats and Data Viz
+```{r}
+### use df as final dataframe since it has all required data.
+### First check if temp sig varies based off handheld logger.
+ggplot(df, aes(x = factor, y = mean_ambient_temp)) +
+  geom_boxplot() +
+  labs(
+       x = "Factor",
+       y = "Ambient Temperature (°C)") + theme_classic()
+
+ambient_anova_result <- aov(mean_ambient_temp ~ factor, data = df) ### Temp from handheld not significant
+print(summary(ambient_anova_result))
+
+### Check Ground temp
+ggplot(df, aes(x = factor, y = mean_ground_temp)) +
+  geom_boxplot() +
+  labs(
+       x = "Factor",
+       y = "Ground Temperature (°C)") + theme_classic()
+
+ground_anova_result <- aov(mean_ground_temp ~ factor, data = df) ### Ground temp significantly varied
+print(summary(ground_anova_result))
+
+ground_emmeans_result <- emmeans(ground_anova_result, pairwise ~ factor) 
+print(ground_emmeans_result)
+
+### Now Humidity
+ggplot(df, aes(x = factor, y = mean_rh)) +
+  geom_boxplot() +
+  labs(
+       x = "Factor",
+       y = "Relative Humidity") + theme_classic()
+
+rh_anova_result <- aov(mean_rh ~ factor, data = df) ### Ground temp significantly varied
+print(summary(rh_anova_result))
+
+
+### Final findings from temp data so far. Loggers indicate that mimics were cooler than open areas and not significantly different from shrubs. Handheld ambient indicate no significance. Handheld ground indicates that the temperature under shrubs is cooler than mimic and open, with no signifiacne between open and mimics. Finally RH is not signicant across any of the factors.
+```
+
+
+```{r}
+### Now we test abundance with the factors.
+# df now has factor = microsite and site_code has been edited to match regional.csv
+
+df <- read.csv("tidy_mimic_2023.csv")
+ggplot(df, aes(x = microsite, y = abundance)) +
+  geom_boxplot() +
+  labs(
+       x = "Microsite",
+       y = "Abundance") + theme_classic()
+
+hist(df$abundance, main = "Histogram of Response Variable") ### data is skewed.
+
+model1 <- glm(abundance~microsite*site_code + mean_ambient_temp + shrub_density, family = "poisson", data = df)
+model1
+anova(model1, test = "Chisq")
+abundance_emmeans_result <- emmeans(model1, pairwise ~ microsite|site_code)
+print(abundance_emmeans_result)
+```
+
+
+```{r}
+### Richness Data
+ggplot(df, aes(x = microsite, y = richness)) +
+  geom_boxplot() +
+  labs(
+       x = "Microsite",
+       y = "Richness") + theme_classic()
+
+hist(df$richness, main = "Histogram of Response Variable") ### data is skewed.
+
+
+
+model2 <- glm(richness~microsite*site_code + mean_ambient_temp + shrub_density, family = "poisson", data = df)
+model2
+anova(model2, test = "Chisq")
+
+
+richness_emmeans_result <- emmeans(model2, pairwise ~ microsite|site_code)
+print(richness_emmeans_result)
+```
+```{r}
+### Evenness
+
+ggplot(df, aes(x = microsite, y = evenness)) +
+  geom_boxplot() +
+  labs(
+       x = "Microsite",
+       y = "Evenness") + theme_classic()
+
+hist(df$evenness, main = "Histogram of Response Variable") ### data is skewed.
+
+
+
+model3 <- glm(evenness~microsite*site_code + mean_ambient_temp + shrub_density, family = "poisson", data = df)
+model3
+anova(model3, test = "Chisq")
+
+
+evenness_emmeans_result <- emmeans(model2, pairwise ~ microsite|site_code)
+print(evenness_emmeans_result)
+```
+
