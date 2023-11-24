@@ -303,36 +303,37 @@ print(emmeans_result)
 ```{r}
 ### use df as final dataframe since it has all required data.
 ### First check if temp sig varies based off handheld logger.
-ggplot(df, aes(x = factor, y = mean_ambient_temp)) +
+df <- read.csv("tidy_mimic_2023.csv")
+ggplot(df, aes(x = microsite, y = mean_ambient_temp)) +
   geom_boxplot() +
   labs(
        x = "Factor",
        y = "Ambient Temperature (°C)") + theme_classic()
 
-ambient_anova_result <- aov(mean_ambient_temp ~ factor, data = df) ### Temp from handheld not significant
+ambient_anova_result <- aov(mean_ambient_temp ~ microsite, data = df) ### Temp from handheld not significant
 print(summary(ambient_anova_result))
 
 ### Check Ground temp
-ggplot(df, aes(x = factor, y = mean_ground_temp)) +
+ggplot(df, aes(x = microsite, y = mean_ground_temp)) +
   geom_boxplot() +
   labs(
        x = "Factor",
        y = "Ground Temperature (°C)") + theme_classic()
 
-ground_anova_result <- aov(mean_ground_temp ~ factor, data = df) ### Ground temp significantly varied
+ground_anova_result <- aov(mean_ground_temp ~ microsite, data = df) ### Ground temp significantly varied
 print(summary(ground_anova_result))
 
-ground_emmeans_result <- emmeans(ground_anova_result, pairwise ~ factor) 
+ground_emmeans_result <- emmeans(ground_anova_result, pairwise ~ microsite) 
 print(ground_emmeans_result)
 
 ### Now Humidity
-ggplot(df, aes(x = factor, y = mean_rh)) +
+ggplot(df, aes(x = microsite, y = mean_rh)) +
   geom_boxplot() +
   labs(
        x = "Factor",
        y = "Relative Humidity") + theme_classic()
 
-rh_anova_result <- aov(mean_rh ~ factor, data = df) ### Ground temp significantly varied
+rh_anova_result <- aov(mean_rh ~ microsite, data = df) ### Ground temp significantly varied
 print(summary(rh_anova_result))
 
 
@@ -344,7 +345,6 @@ print(summary(rh_anova_result))
 ### Now we test abundance with the factors.
 # df now has factor = microsite and site_code has been edited to match regional.csv
 library(AER) ### For testing overdispersion
-df <- read.csv("tidy_mimic_2023.csv")
 ggplot(df, aes(x = microsite, y = abundance)) +
   geom_boxplot() +
   labs(
@@ -532,4 +532,44 @@ evenness_ground <- ggplot(df, aes(mean_ground_temp, evenness, color = microsite)
   geom_smooth(method = lm, se = TRUE) + labs(tag = "A")
 evenness_ground
 ```
+### Maps
+```{r}
 
+library(maps)
+library(ggmap)
+# Set your Google Maps API key
+api_key <- "AIzaSyBWSInlcZQ9hnFVEdCcZqD94IgOl95QhIs"
+register_google(key = api_key)
+
+# Specify the bounding box for the map with names
+bounding_box <- c(left = -119.4, bottom = 34, right = -119.7, top = 36)
+
+# Option 1
+my_map_1 <- get_map(location = bounding_box, maptype = "terrain", source = "google", zoom = 11)
+
+ggmap(my_map_1) +
+  geom_point(data = site, aes(x = long, y = lat, color = "red"), size = 3, shape = 16) +
+  labs(title = "Map with Data Points")
+
+
+# Option 2
+my_map_2 <- get_map(location = bounding_box, maptype = "roadmap", source = "google", zoom = 11)
+
+ggmap(my_map_2) +
+  geom_point(data = site, aes(x = long, y = lat, color = "red"), size = 3, shape = 16) +
+  labs(title = "Map with Data Points")
+
+# Option 3
+my_map_3 <- get_map(location = bounding_box, maptype = "hybrid", source = "google", zoom = 11)
+
+ggmap(my_map_3) +
+  geom_point(data = site, aes(x = long, y = lat, color = "red"), size = 3, shape = 16) +
+  labs(title = "Map with Data Points")
+
+# Option 4
+my_map_4 <- get_map(location = bounding_box, maptype = "satellite", source = "google", zoom = 11)
+
+ggmap(my_map_4) +
+  geom_point(data = site, aes(x = long, y = lat, color = "red"), size = 3, shape = 16) +
+  labs(title = "Map with Data Points")
+```
