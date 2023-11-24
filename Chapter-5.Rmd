@@ -353,10 +353,10 @@ ggplot(df, aes(x = microsite, y = abundance)) +
 
 hist(df$abundance, main = "Histogram of Response Variable") ### data is skewed.
 
-model1 <- glm(abundance~microsite*site_code + mean_ambient_temp + shrub_density, family = "poisson", data = df)
+model1 <- glm(abundance~microsite + mean_ambient_temp + shrub_density, family = "poisson", data = df)
 model1
 anova(model1, test = "Chisq")
-abundance_emmeans_result <- emmeans(model1, pairwise ~ microsite|site_code)
+abundance_emmeans_result <- emmeans(model1, pairwise ~ microsite)
 print(abundance_emmeans_result)
 ```
 
@@ -373,12 +373,12 @@ hist(df$richness, main = "Histogram of Response Variable") ### data is skewed.
 
 
 
-model2 <- glm(richness~microsite*site_code + mean_ambient_temp + shrub_density, family = "poisson", data = df)
+model2 <- glm(richness~microsite + mean_ambient_temp + shrub_density, family = "poisson", data = df)
 model2
 anova(model2, test = "Chisq")
 
 
-richness_emmeans_result <- emmeans(model2, pairwise ~ microsite|site_code)
+richness_emmeans_result <- emmeans(model2, pairwise ~ microsite)
 print(richness_emmeans_result)
 ```
 ```{r}
@@ -394,12 +394,12 @@ hist(df$evenness, main = "Histogram of Response Variable") ### data is skewed.
 
 
 
-model3 <- glm(evenness~microsite*site_code + mean_ambient_temp + shrub_density, family = "poisson", data = df)
+model3 <- glm(evenness~microsite + mean_ambient_temp + shrub_density, family = "poisson", data = df)
 model3
 anova(model3, test = "Chisq")
 
 
-evenness_emmeans_result <- emmeans(model2, pairwise ~ microsite|site_code)
+evenness_emmeans_result <- emmeans(model3, pairwise ~ microsite)
 print(evenness_emmeans_result)
 ```
 
