@@ -352,6 +352,7 @@ ggplot(df, aes(x = microsite, y = abundance)) +
        y = "Abundance") + theme_classic()
 
 hist(df$abundance, main = "Histogram of Response Variable") ### data is skewed.
+shapiro.test(df$abundance)
 
 model1 <- glm(abundance~microsite + mean_ambient_temp + shrub_density, family = "poisson", data = df)
 model1
@@ -370,7 +371,7 @@ ggplot(df, aes(x = microsite, y = richness)) +
        y = "Richness") + theme_classic()
 
 hist(df$richness, main = "Histogram of Response Variable") ### data is skewed.
-
+shapiro.test(df$richness)
 
 
 model2 <- glm(richness~microsite + mean_ambient_temp + shrub_density, family = "poisson", data = df)
@@ -391,7 +392,7 @@ ggplot(df, aes(x = microsite, y = evenness)) +
        y = "Evenness") + theme_classic()
 
 hist(df$evenness, main = "Histogram of Response Variable") ### data is skewed.
-
+shapiro.test(df$evenness)
 
 
 model3 <- glm(evenness~microsite + mean_ambient_temp + shrub_density, family = "poisson", data = df)
@@ -402,4 +403,3 @@ anova(model3, test = "Chisq")
 evenness_emmeans_result <- emmeans(model3, pairwise ~ microsite)
 print(evenness_emmeans_result)
 ```
-
