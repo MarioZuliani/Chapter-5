@@ -244,6 +244,7 @@ richness <- density_simple_2023 %>%
   dplyr::select(-animals)
 
 df <- merge(df, richness, by = c("site_code", "factor", "microsite_number"))
+
 ```
 
 ```{r}
@@ -253,6 +254,9 @@ evenness_results <- animals_density_final %>%
   summarize(evenness = diversity(captures, index = "shannon")) ### This worked 100x better than Vegan!!!
 
 df <- merge(df, evenness_results, by = c("site_code", "factor", "microsite_number"))
+
+#write.csv(df, file = "Dataframe.csv")
+df <- read.csv("Dataframe.csv")
 ```
 
 ```{r}
@@ -338,25 +342,65 @@ print(summary(rh_anova_result))
 
 ```{r}
 ### Now we test abundance with the factors.
-ggplot(df, aes(x = factor, y = abundance)) +
+# df now has factor = microsite and site_code has been edited to match regional.csv
+
+df <- read.csv("tidy_mimic_2023.csv")
+ggplot(df, aes(x = microsite, y = abundance)) +
   geom_boxplot() +
   labs(
-       x = "Factor",
+       x = "Microsite",
        y = "Abundance") + theme_classic()
 
 hist(df$abundance, main = "Histogram of Response Variable") ### data is skewed.
 transformed_response <- log(df$abundance + 1)
 hist(transformed_response, main = "Histogram of Transformed Response Variable")
+shapiro.test(transformed_response)
+qqnorm(transformed_response)
+boxplot(transformed_response, main = "Boxplot of Transformed Response Variable")
+
+log_data <- df
+log_data$log_abundance <- transformed_response
+
+log_model <- lm(transformed_response ~ microsite, data = log_data)
+summary(log_model)
+
+exp(coef(log_model))
+exp(confint(log_model))
+
+plot(predict(log_model), residuals(log_model),
+     xlab = "Predicted Values",
+     ylab = "Residuals",
+     main = "Predicted vs. Residuals Plot")
 
 
 
-
-
-model1 <- glm(abundance~factor + mean_ambient_temp + shrub_density, family = "poisson", data = df)
+model1 <- glm(abundance~microsite*site_code + mean_ambient_temp + shrub_density, family = "poisson", data = df)
 model1
 anova(model1, test = "Chisq")
-abundance_anova_result <- aov(abundance ~ factor + mean_ambient_temp + shrub_density, data = df) ### Ground temp significantly varied
+abundance_anova_result <- aov(abundance ~ microsite*site_code + mean_ambient_temp + shrub_density, data = df) ### Ground temp significantly varied
 print(summary(abundance_anova_result))
 ```
 
+
+```{r}
+### Richness Data
+ggplot(df, aes(x = microsite, y = richness)) +
+  geom_boxplot() +
+  labs(
+       x = "Microsite",
+       y = "Richness") + theme_classic()
+
+hist(df$richness, main = "Histogram of Response Variable") ### data is skewed.
+
+
+
+model2 <- glm(richness~microsite*site_code + mean_ambient_temp + shrub_density, family = "poisson", data = df)
+model2
+anova(model2, test = "Chisq")
+richness_anova_result <- aov(richness ~ microsite*site_code + mean_ambient_temp + shrub_density, data = df) ### Ground temp significantly varied
+print(summary(richness_anova_result))
+
+richness_emmeans_result <- emmeans(richness_anova_result, pairwise ~ microsite)
+print(richness_emmeans_result)
+```
 
