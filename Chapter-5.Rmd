@@ -343,7 +343,7 @@ print(summary(rh_anova_result))
 ```{r}
 ### Now we test abundance with the factors.
 # df now has factor = microsite and site_code has been edited to match regional.csv
-
+library(AER) ### For testing overdispersion
 df <- read.csv("tidy_mimic_2023.csv")
 ggplot(df, aes(x = microsite, y = abundance)) +
   geom_boxplot() +
@@ -359,6 +359,9 @@ model1
 anova(model1, test = "Chisq")
 abundance_emmeans_result <- emmeans(model1, pairwise ~ microsite)
 print(abundance_emmeans_result)
+
+dispersion_test_abundance <- dispersiontest(model1)
+print(dispersion_test_abundance)
 ```
 
 
@@ -381,6 +384,9 @@ anova(model2, test = "Chisq")
 
 richness_emmeans_result <- emmeans(model2, pairwise ~ microsite)
 print(richness_emmeans_result)
+
+dispersion_test_richness <- dispersiontest(model2)
+print(dispersion_test_richness) ### Non sig p-value so should be good
 ```
 ```{r}
 ### Evenness
@@ -402,4 +408,7 @@ anova(model3, test = "Chisq")
 
 evenness_emmeans_result <- emmeans(model3, pairwise ~ microsite)
 print(evenness_emmeans_result)
+
+dispersion_test_evenness <- dispersiontest(model3)
+print(dispersion_test_evenness)
 ```
