@@ -390,7 +390,6 @@ print(dispersion_test_richness) ### Non sig p-value so should be good
 ```
 ```{r}
 ### Evenness
-
 ggplot(df, aes(x = microsite, y = evenness)) +
   geom_boxplot() +
   labs(
@@ -413,30 +412,124 @@ dispersion_test_evenness <- dispersiontest(model3)
 print(dispersion_test_evenness)
 ```
 ```{r}
-### Abundance v Shrub Density
+### Abundance v Shrub Density  (Shrub density on its own is significant but not between microsites)
+model7 <- glm(abundance~microsite*shrub_density, data = df) ### It is NOT poisson for this distribution! It is gaussian!
+model7 ### Need to run the model this way because the figures show that microsite and temp interaction is not significant.
+anova(model7, test = "Chisq")
+
 abundance_density <- ggplot(df, aes(shrub_density, abundance, color = microsite)) +
   geom_point(size = 0.5) +
   scale_color_brewer(palette = "Set1") +
-  labs(x = "Shrub Density", y = "Animal Abundance") + theme_classic() + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5),legend.position = "none",legend.title = element_blank(), axis.text = element_text(size = 10)) +
-  geom_smooth(method = lm, se = TRUE) + theme(axis.title.x = element_blank()) + labs(tag = "A")
+  labs(x = "Shrub Density", y = "Animal Abundance") + theme_classic() + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5),legend.title = element_blank(), axis.text = element_text(size = 10)) +
+  geom_smooth(method = lm, se = TRUE) + labs(tag = "A")
 abundance_density
 ```
 ```{r}
-### richness v density
+### richness v density (Again, significant shrub density but not the interactio with microsite!)
+model8 <- glm(richness~microsite*shrub_density, data = df) ### It is NOT poisson for this distribution! It is gaussian!
+model8
+anova(model8, test = "Chisq")
+
 richness_density <- ggplot(df, aes(shrub_density, richness, color = microsite)) +
   geom_point(size = 0.5) +
   scale_color_brewer(palette = "Set1") +
-  labs(x = "Shrub Density", y = "Richness") + theme_classic() + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5),legend.position = "none",legend.title = element_blank(), axis.text = element_text(size = 10)) +
-  geom_smooth(method = lm, se = TRUE) + theme(axis.title.x = element_blank()) + labs(tag = "B")
+  labs(x = "Shrub Density", y = "Richness") + theme_classic() + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5), axis.text = element_text(size = 10)) +
+  geom_smooth(method = lm, se = TRUE) + labs(tag = "B")
 richness_density
 ```
 ```{r}
-### Evenness v density
+### Evenness v density (Density is not significant for evenness)
+model9 <- glm(evenness~microsite*shrub_density, data = df) ### It is NOT poisson for this distribution! It is gaussian!
+model9
+anova(model9, test = "Chisq")
+
 evenness_density <- ggplot(df, aes(shrub_density, evenness, color = microsite)) +
   geom_point(size = 0.5) +
   scale_color_brewer(palette = "Set1") +
-  labs(x = "Shrub Density", y = "Richness") + theme_classic() + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5),legend.position = "none",legend.title = element_blank(), axis.text = element_text(size = 10)) +
-  geom_smooth(method = lm, se = TRUE) + theme(axis.title.x = element_blank()) + labs(tag = "B")
+  labs(x = "Shrub Density", y = "Evenness") + theme_classic() + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5),legend.title = element_blank(), axis.text = element_text(size = 10)) +
+  geom_smooth(method = lm, se = TRUE) + labs(tag = "B")
 evenness_density
+```
+```{r}
+# Abundance v Ambient temp (No significance)
+model4 <- glm(evenness~microsite*mean_ambient_temp + shrub_density, family = "poisson", data = df)
+model4 ### Need to run the model this way because the figures show that microsite and temp interaction is not significant.
+anova(model4, test = "Chisq")
+
+abundance_ambient <- ggplot(df, aes(mean_ambient_temp, abundance, color = microsite)) +
+  geom_point(size = 0.5) +
+  scale_color_brewer(palette = "Set1") +
+  labs(x = "Ambient Temperature (°C)", y = "Animal Abundance") + theme_classic() + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5),legend.title = element_blank(), axis.text = element_text(size = 10)) +
+  geom_smooth(method = lm, se = TRUE) + labs(tag = "A")
+abundance_ambient
+
+```
+```{r}
+### Richness v Ambient temperature
+
+model5 <- glm(richness~microsite*mean_ambient_temp + shrub_density, family = "poisson", data = df)
+model5 ### Need to run the model this way because the figures show that microsite and temp interaction is not significant.
+anova(model5, test = "Chisq")
+emmeans(model5, pairwise~microsite|mean_ambient_temp) ### Higher richness at mimic microsites than shrub and open sites
+
+richness_ambient <- ggplot(df, aes(mean_ambient_temp, richness, color = microsite)) +
+  geom_point(size = 0.5) +
+  scale_color_brewer(palette = "Set1") +
+  labs(x = "Ambient Temperature (°C)", y = "Richness") + theme_classic() + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5),legend.title = element_blank(), axis.text = element_text(size = 10)) +
+  geom_smooth(method = lm, se = TRUE) + labs(tag = "A")
+richness_ambient
+```
+```{r}
+### Evenness v ambient temperature (No significance)
+model6 <- glm(evenness~microsite*mean_ambient_temp + shrub_density, family = "poisson", data = df)
+model6 ### Need to run the model this way because the figures show that microsite and temp interaction is not significant.
+anova(model6, test = "Chisq")
+
+evenness_ambient <- ggplot(df, aes(mean_ambient_temp, evenness, color = microsite)) +
+  geom_point(size = 0.5) +
+  scale_color_brewer(palette = "Set1") +
+  labs(x = "Ambient Temperature (°C)", y = "Evenness") + theme_classic() + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5),legend.title = element_blank(), axis.text = element_text(size = 10)) +
+  geom_smooth(method = lm, se = TRUE) + labs(tag = "A")
+evenness_ambient
+```
+```{r}
+### Abundance v ground temp (Need second opinion on this one!)
+model10 <- glm(abundance~microsite*mean_ground_temp, family = poisson, data = df) ### Not poisson distribution! Gaussian!
+model10 
+anova(model10, test = "Chisq")
+emmeans(model10, pairwise~microsite|mean_ground_temp)
+
+abundance_ground <- ggplot(df, aes(mean_ground_temp, abundance, color = microsite)) +
+  geom_point(size = 0.5) +
+  scale_color_brewer(palette = "Set1") +
+  labs(x = "Ground Temperature (°C)", y = "Animal Abundance") + theme_classic() + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5),legend.title = element_blank(), axis.text = element_text(size = 10)) +
+  geom_smooth(method = lm, se = TRUE)  + labs(tag = "A")
+abundance_ground
+```
+```{r}
+model11 <- glm(richness~microsite*mean_ground_temp, family = poisson, data = df) ### Not poisson distribution! Gaussian!
+model11 
+anova(model11, test = "Chisq")
+emmeans(model11, pairwise~microsite|mean_ground_temp)
+
+richness_ground <- ggplot(df, aes(mean_ground_temp, richness, color = microsite)) +
+  geom_point(size = 0.5) +
+  scale_color_brewer(palette = "Set1") +
+  labs(x = "Ground Temperature (°C)", y = "Richness") + theme_classic() + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5), axis.text = element_text(size = 10)) +
+  geom_smooth(method = lm, se = TRUE) + labs(tag = "A")
+richness_ground
+```
+```{r}
+### Evenness v ground temp
+model12 <- glm(evenness~microsite*mean_ground_temp, family = poisson, data = df) ### Not poisson distribution! Gaussian!
+model12 
+anova(model12, test = "Chisq")
+
+evenness_ground <- ggplot(df, aes(mean_ground_temp, evenness, color = microsite)) +
+  geom_point(size = 0.5) +
+  scale_color_brewer(palette = "Set1") +
+  labs(x = "Ground Temperature (°C)", y = "Evenness") + theme_classic() + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5), axis.text = element_text(size = 10)) +
+  geom_smooth(method = lm, se = TRUE) + labs(tag = "A")
+evenness_ground
 ```
 
