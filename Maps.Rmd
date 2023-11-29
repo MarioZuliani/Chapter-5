@@ -1,0 +1,25 @@
+---
+title: "Map"
+author: "Mario Zuliani"
+date: "2023-11-29"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(maps)
+library(ggmap)
+library(ggplot2)
+# Set your Google Maps API key
+api_key <- "AIzaSyBWSInlcZQ9hnFVEdCcZqD94IgOl95QhIs"
+register_google(key = api_key)
+
+microsite <- read.csv("Chpt5_Site_Data.csv")
+
+my_map_5 <- get_map(location = bounding_box, maptype = "terrain", source = "google", zoom = 11)
+micro_map <-  ggmap(my_map_5) +
+  geom_point(data = microsite, aes(x = long, y = lat, color = factor), size = 3, shape = 16) + scale_colour_brewer(palette = "Paired")+
+  labs(x = "Longitude", y = "Latitude") + labs(color = "Microsite")
+micro_map
+```

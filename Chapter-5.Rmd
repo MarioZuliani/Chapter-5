@@ -305,12 +305,12 @@ print(emmeans_result)
 ### use df as final dataframe since it has all required data.
 ### First check if temp sig varies based off handheld logger.
 df <- read.csv("tidy_mimic_2023.csv")
-supp1.1 <- ggplot(df, aes(x = microsite, y = mean_ambient_temp, color = microsite)) +
-  geom_boxplot() + stat_summary(fun = mean, geom = "point", shape = 17, size = 2, position = position_dodge(width = 0.75 )) +
+supp1.1 <- ggplot(df, aes(x = microsite, y = mean_ambient_temp, fill = microsite)) +
+  geom_boxplot() + stat_summary(fun = mean, geom = "point", shape = 18, size = 2, fill = "black", position = position_dodge(width = 0.75 )) +
   labs(
        x = "Microsite",
        y = "Ambient Temperature (°C)") + theme_classic() + labs(tag = "A", x = NULL) +
-  scale_color_brewer(palette = "Paired") + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5), axis.text = element_text(size = 10)) + theme(legend.position = "none") + theme(aspect.ratio = 1)
+ scale_fill_manual(values = c("mimic" = "#a6cee3", "open" = "#1f78b4", "shrub" = "#b2df8a")) + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5), axis.text = element_text(size = 10)) + theme(legend.position = "none") + theme(aspect.ratio = 1)
 
 supp1.1
 
@@ -318,11 +318,11 @@ ambient_anova_result <- aov(mean_ambient_temp ~ microsite, data = df) ### Temp f
 print(summary(ambient_anova_result))
 
 ### Check Ground temp
-supp1.2 <- ggplot(df, aes(x = microsite, y = mean_ground_temp, color = microsite)) +
-  geom_boxplot() + stat_summary(fun = mean, geom = "point", shape = 17, size = 2, position = position_dodge(width = 0.75 )) + labs(
+supp1.2 <- ggplot(df, aes(x = microsite, y = mean_ground_temp, fill = microsite)) +
+  geom_boxplot() + stat_summary(fun = mean, geom = "point", shape = 18, size = 2, position = position_dodge(width = 0.75 )) + labs(
        x = "Microsite",
        y = "Ground Temperature (°C)") + theme_classic() + labs(tag = "B") +
-  scale_color_brewer(palette = "Paired") + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5), axis.text = element_text(size = 10)) + theme(legend.position = "none") + theme(aspect.ratio = 1)
+  scale_fill_manual(values = c("mimic" = "#a6cee3", "open" = "#1f78b4", "shrub" = "#b2df8a")) + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5), axis.text = element_text(size = 10)) + theme(legend.position = "none") + theme(aspect.ratio = 1)
 
 supp1.2
 
@@ -342,7 +342,7 @@ ggplot(df, aes(x = microsite, y = mean_rh)) +
 rh_anova_result <- aov(mean_rh ~ microsite, data = df) ### Ground temp significantly varied
 print(summary(rh_anova_result))
 
-Supp1 <- (supp1.1 / supp1.2) +  plot_layout(guides = 'collect') + theme(legend.position = 'right') + labs(color = "Microsite")
+Supp1 <- (supp1.1 / supp1.2) +  plot_layout(guides = 'collect')
 
 print(Supp1)
 
@@ -355,12 +355,12 @@ print(Supp1)
 ### Now we test abundance with the factors.
 # df now has factor = microsite and site_code has been edited to match regional.csv
 library(AER) ### For testing overdispersion
-plot2.1 <- ggplot(df, aes(x = microsite, y = abundance, color = microsite)) +
-  geom_boxplot() + stat_summary(fun = mean, geom = "point", shape = 17, size = 2, position = position_dodge(width = 0.75 )) +
+plot2.1 <- ggplot(df, aes(x = microsite, y = abundance, fill = microsite)) +
+  geom_boxplot() + stat_summary(fun = mean, geom = "point", shape = 18, size = 2, position = position_dodge(width = 0.75 )) +
   labs(
        x = "Microsite",
        y = "Abundance") + theme_classic() +  labs(tag = "A", x = NULL)+ 
-  scale_color_brewer(palette = "Paired") + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5), axis.text = element_text(size = 10)) + theme(aspect.ratio = 0.7) + theme(legend.position = "none") + theme(legend.text = element_text(size = 8))
+  scale_fill_manual(values = c("mimic" = "#a6cee3", "open" = "#1f78b4", "shrub" = "#b2df8a")) + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5), axis.text = element_text(size = 10)) + theme(aspect.ratio = 0.7) + theme(legend.position = "none") + theme(legend.text = element_text(size = 8))
 plot2.1
 
 hist(df$abundance, main = "Histogram of Response Variable") ### data is skewed.
@@ -379,12 +379,12 @@ print(dispersion_test_abundance)
 
 ```{r}
 ### Richness Data
-plot2.2 <- ggplot(df, aes(x = microsite, y = richness, color = microsite)) +
-  geom_boxplot() + stat_summary(fun = mean, geom = "point", shape = 17, size = 2, position = position_dodge(width = 0.75 )) +
+plot2.2 <- ggplot(df, aes(x = microsite, y = richness, fill = microsite)) +
+  geom_boxplot() + stat_summary(fun = mean, geom = "point", shape = 18, size = 2, position = position_dodge(width = 0.75 )) +
   labs(
        x = "Microsite",
        y = "Richness") + theme_classic() +  labs(tag = "B", x = NULL)+
-  scale_color_brewer(palette = "Paired") + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5), axis.text = element_text(size = 10)) + theme(aspect.ratio = 0.7) + theme(legend.position = "none") + theme(legend.text = element_text(size = 8))
+  scale_fill_manual(values = c("mimic" = "#a6cee3", "open" = "#1f78b4", "shrub" = "#b2df8a")) + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5), axis.text = element_text(size = 10)) + theme(aspect.ratio = 0.7) + theme(legend.position = "none") + theme(legend.text = element_text(size = 8))
 plot2.2
 
 hist(df$richness, main = "Histogram of Response Variable") ### data is skewed.
@@ -404,12 +404,13 @@ print(dispersion_test_richness) ### Non sig p-value so should be good
 ```
 ```{r}
 ### Evenness
-plot2.3 <- ggplot(df, aes(x = microsite, y = evenness, color = microsite )) +
-  geom_boxplot() + stat_summary(fun = mean, geom = "point", shape = 17, size = 2, position = position_dodge(width = 0.75 )) +
+plot2.3 <- ggplot(df, aes(x = microsite, y = evenness, fill = microsite )) +
+  geom_boxplot() + stat_summary(fun = mean, geom = "point", shape = 18, size = 2, position = position_dodge(width = 0.75 )) +
   labs(
        x = "Microsite",
        y = "Evenness") + theme_classic() + labs(tag = "C") +
-  scale_color_brewer(palette = "Paired") + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5), axis.text = element_text(size = 10)) + theme(aspect.ratio = 0.7) + theme(legend.position = "none") + theme(legend.text = element_text(size = 8))
+  scale_fill_manual(values = c("mimic" = "#a6cee3", "open" = "#1f78b4", "shrub" = "#b2df8a")) + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5), axis.text = element_text(size = 10)) + theme(aspect.ratio = 0.7) + theme(legend.position = "none") + theme(legend.text = element_text(size = 8))
+
 plot2.3
 
 hist(df$evenness, main = "Histogram of Response Variable") ### data is skewed.
@@ -428,7 +429,7 @@ dispersion_test_evenness <- dispersiontest(model3)
 print(dispersion_test_evenness)
 
 
-Fig2 <- (plot2.1 / plot2.2 / plot2.3) +  plot_layout(guides = 'collect') + theme(legend.position = 'right') + labs(color = "Microsite")
+Fig2 <- (plot2.1 / plot2.2 / plot2.3) +  plot_layout(guides = 'collect')
 
 print(Fig2)
 ```
@@ -615,7 +616,7 @@ ggmap(my_map_3) +
 my_map_4 <- get_map(location = bounding_box, maptype = "terrain", source = "google", zoom = 8)
 
 figure_1 <- ggmap(my_map_4) +
-  geom_point(data = site, aes(x = long, y = lat), color = "black", size = 3, shape = 16) +
+  geom_point(data = site, aes(x = long, y = lat), color = "black", size = 2, shape = 16) +
   labs(x = "Longitude", y = "Latitude")
 figure_1
 
@@ -627,3 +628,21 @@ figure_2 <- ggmap(my_map_5) +
   labs(x = "Longitude", y = "Latitude")
 figure_2
 ```
+```{r}
+temp <- ggplot(df, aes(x = site_code, y = mean_ambient_temp, fill = microsite)) +
+  geom_boxplot() + stat_summary(fun = mean, geom = "point", shape = 18, size = 2, position = position_dodge(width = 0.75 )) + labs(
+       x = "Site",
+       y = "Ambient Temperature (°C)", fill = "Microsite") + theme_classic() + 
+  scale_fill_manual(values = c("mimic" = "#a6cee3", "open" = "#1f78b4", "shrub" = "#b2df8a")) + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5), axis.text = element_text(size = 7)) + theme(aspect.ratio = 1)
+temp
+
+p <- glm(mean_ambient_temp~microsite*site_code, family = "gaussian",data = df)
+p
+anova(p, test = "Chisq")
+
+em1 <- emmeans(p, pairwise~microsite|site_code)
+em1
+em2 <- emmeans(p, pairwise~site_code|microsite)
+em2
+```
+
