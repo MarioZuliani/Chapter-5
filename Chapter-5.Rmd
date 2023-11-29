@@ -19,6 +19,7 @@ library(PRISMAstatement)
 library(skimr)
 library(MASS)
 library(ggpubr)
+library(patchwork)
 ```
 ### Clean observation data
 ```{r}
@@ -93,10 +94,10 @@ plot1 <- ggplot(scientific, aes(factor(order_var), total_counts, fill = factor))
   coord_flip() +
   theme_classic() +
   xlab("Species") +
-  ylab("Percent Proportion") +
-  labs(fill = "Factor") +
-  scale_fill_manual(values = c("#009900", "#0066cc", "#8B0000")) +
-  scale_x_continuous(breaks = 1:length(custom_order), labels = custom_order) + scale_x_discrete(labels = custom_order)
+  ylab("Relative Proportion") +
+  labs(fill = "Microsite") +
+  scale_fill_brewer(palette = "Paired") +
+  scale_x_continuous(breaks = 1:length(custom_order), labels = custom_order) + scale_x_discrete(labels = custom_order) + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5), axis.text = element_text(size = 10))
 
 plot1
 ```
@@ -189,7 +190,7 @@ dim(pca_data_final)
 env_final <- read.csv("environment.csv") ### Drop Tecopa open 1, Tecopa open 4, since they have no animal observations.
 dim(env_final)
 
-model010 <- adonis(pca_data_final ~ factor*shrub_density, data = env_final)
+model010 <- adonis(pca_data_final ~ factor+shrub_density, data = env_final)
 model010
 
 dist_final <- vegdist(pca_data_final, species = "bray")
@@ -201,8 +202,8 @@ p02 <- as.data.frame(res_final$vectors)%>%
 pcoa_final <- ggplot(p02, aes(Axis.1, Axis.2, group = factor)) +
   geom_point(aes(color = factor)) +
   geom_text(aes(label=site.number), hjust = 0, vjust = 0, check_overlap = TRUE, nudge_x = 0.01)+
-  scale_color_brewer(palette = "Set1") + theme_classic() + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5), axis.text = element_text(size = 10)) +
-  labs(color = "factor")
+  scale_color_brewer(palette = "Paired") + theme_classic() + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5), axis.text = element_text(size = 10)) + 
+  labs(color = "Microsite") + theme(aspect.ratio = 1)
 
 pcoa_final
 
@@ -304,21 +305,26 @@ print(emmeans_result)
 ### use df as final dataframe since it has all required data.
 ### First check if temp sig varies based off handheld logger.
 df <- read.csv("tidy_mimic_2023.csv")
-ggplot(df, aes(x = microsite, y = mean_ambient_temp)) +
-  geom_boxplot() +
+supp1.1 <- ggplot(df, aes(x = microsite, y = mean_ambient_temp, color = microsite)) +
+  geom_boxplot() + stat_summary(fun = mean, geom = "point", shape = 17, size = 2, position = position_dodge(width = 0.75 )) +
   labs(
-       x = "Factor",
-       y = "Ambient Temperature (°C)") + theme_classic()
+       x = "Microsite",
+       y = "Ambient Temperature (°C)") + theme_classic() + labs(tag = "A", x = NULL) +
+  scale_color_brewer(palette = "Paired") + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5), axis.text = element_text(size = 10)) + theme(legend.position = "none") + theme(aspect.ratio = 1)
+
+supp1.1
 
 ambient_anova_result <- aov(mean_ambient_temp ~ microsite, data = df) ### Temp from handheld not significant
 print(summary(ambient_anova_result))
 
 ### Check Ground temp
-ggplot(df, aes(x = microsite, y = mean_ground_temp)) +
-  geom_boxplot() +
-  labs(
-       x = "Factor",
-       y = "Ground Temperature (°C)") + theme_classic()
+supp1.2 <- ggplot(df, aes(x = microsite, y = mean_ground_temp, color = microsite)) +
+  geom_boxplot() + stat_summary(fun = mean, geom = "point", shape = 17, size = 2, position = position_dodge(width = 0.75 )) + labs(
+       x = "Microsite",
+       y = "Ground Temperature (°C)") + theme_classic() + labs(tag = "B") +
+  scale_color_brewer(palette = "Paired") + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5), axis.text = element_text(size = 10)) + theme(legend.position = "none") + theme(aspect.ratio = 1)
+
+supp1.2
 
 ground_anova_result <- aov(mean_ground_temp ~ microsite, data = df) ### Ground temp significantly varied
 print(summary(ground_anova_result))
@@ -336,6 +342,10 @@ ggplot(df, aes(x = microsite, y = mean_rh)) +
 rh_anova_result <- aov(mean_rh ~ microsite, data = df) ### Ground temp significantly varied
 print(summary(rh_anova_result))
 
+Supp1 <- (supp1.1 / supp1.2) +  plot_layout(guides = 'collect') + theme(legend.position = 'right') + labs(color = "Microsite")
+
+print(Supp1)
+
 
 ### Final findings from temp data so far. Loggers indicate that mimics were cooler than open areas and not significantly different from shrubs. Handheld ambient indicate no significance. Handheld ground indicates that the temperature under shrubs is cooler than mimic and open, with no signifiacne between open and mimics. Finally RH is not signicant across any of the factors.
 ```
@@ -345,11 +355,13 @@ print(summary(rh_anova_result))
 ### Now we test abundance with the factors.
 # df now has factor = microsite and site_code has been edited to match regional.csv
 library(AER) ### For testing overdispersion
-ggplot(df, aes(x = microsite, y = abundance)) +
-  geom_boxplot() +
+plot2.1 <- ggplot(df, aes(x = microsite, y = abundance, color = microsite)) +
+  geom_boxplot() + stat_summary(fun = mean, geom = "point", shape = 17, size = 2, position = position_dodge(width = 0.75 )) +
   labs(
        x = "Microsite",
-       y = "Abundance") + theme_classic()
+       y = "Abundance") + theme_classic() +  labs(tag = "A", x = NULL)+ 
+  scale_color_brewer(palette = "Paired") + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5), axis.text = element_text(size = 10)) + theme(aspect.ratio = 0.7) + theme(legend.position = "none") + theme(legend.text = element_text(size = 8))
+plot2.1
 
 hist(df$abundance, main = "Histogram of Response Variable") ### data is skewed.
 shapiro.test(df$abundance)
@@ -367,11 +379,13 @@ print(dispersion_test_abundance)
 
 ```{r}
 ### Richness Data
-ggplot(df, aes(x = microsite, y = richness)) +
-  geom_boxplot() +
+plot2.2 <- ggplot(df, aes(x = microsite, y = richness, color = microsite)) +
+  geom_boxplot() + stat_summary(fun = mean, geom = "point", shape = 17, size = 2, position = position_dodge(width = 0.75 )) +
   labs(
        x = "Microsite",
-       y = "Richness") + theme_classic()
+       y = "Richness") + theme_classic() +  labs(tag = "B", x = NULL)+
+  scale_color_brewer(palette = "Paired") + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5), axis.text = element_text(size = 10)) + theme(aspect.ratio = 0.7) + theme(legend.position = "none") + theme(legend.text = element_text(size = 8))
+plot2.2
 
 hist(df$richness, main = "Histogram of Response Variable") ### data is skewed.
 shapiro.test(df$richness)
@@ -390,11 +404,13 @@ print(dispersion_test_richness) ### Non sig p-value so should be good
 ```
 ```{r}
 ### Evenness
-ggplot(df, aes(x = microsite, y = evenness)) +
-  geom_boxplot() +
+plot2.3 <- ggplot(df, aes(x = microsite, y = evenness, color = microsite )) +
+  geom_boxplot() + stat_summary(fun = mean, geom = "point", shape = 17, size = 2, position = position_dodge(width = 0.75 )) +
   labs(
        x = "Microsite",
-       y = "Evenness") + theme_classic()
+       y = "Evenness") + theme_classic() + labs(tag = "C") +
+  scale_color_brewer(palette = "Paired") + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5), axis.text = element_text(size = 10)) + theme(aspect.ratio = 0.7) + theme(legend.position = "none") + theme(legend.text = element_text(size = 8))
+plot2.3
 
 hist(df$evenness, main = "Histogram of Response Variable") ### data is skewed.
 shapiro.test(df$evenness)
@@ -410,6 +426,11 @@ print(evenness_emmeans_result)
 
 dispersion_test_evenness <- dispersiontest(model3)
 print(dispersion_test_evenness)
+
+
+Fig2 <- (plot2.1 / plot2.2 / plot2.3) +  plot_layout(guides = 'collect') + theme(legend.position = 'right') + labs(color = "Microsite")
+
+print(Fig2)
 ```
 ```{r}
 ### Abundance v Shrub Density  (Shrub density on its own is significant but not between microsites)
@@ -419,9 +440,9 @@ anova(model7, test = "Chisq")
 
 abundance_density <- ggplot(df, aes(shrub_density, abundance, color = microsite)) +
   geom_point(size = 0.5) +
-  scale_color_brewer(palette = "Set1") +
-  labs(x = "Shrub Density", y = "Animal Abundance") + theme_classic() + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5),legend.title = element_blank(), axis.text = element_text(size = 10)) +
-  geom_smooth(method = lm, se = TRUE) + labs(tag = "A")
+  scale_color_brewer(palette = "Paired") +
+  labs(x = "Shrub Density", y = "Abundance") + theme_classic() + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5), axis.text = element_text(size = 10)) +
+  geom_smooth(method = lm, se = TRUE) + labs(tag = "A", x = NULL) + theme(legend.position = "none") + theme(aspect.ratio = 0.8)
 abundance_density
 ```
 ```{r}
@@ -432,9 +453,9 @@ anova(model8, test = "Chisq")
 
 richness_density <- ggplot(df, aes(shrub_density, richness, color = microsite)) +
   geom_point(size = 0.5) +
-  scale_color_brewer(palette = "Set1") +
+  scale_color_brewer(palette = "Paired") +
   labs(x = "Shrub Density", y = "Richness") + theme_classic() + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5), axis.text = element_text(size = 10)) +
-  geom_smooth(method = lm, se = TRUE) + labs(tag = "B")
+  geom_smooth(method = lm, se = TRUE) + labs(tag = "B", x = NULL) + theme(legend.position = "none") + theme(aspect.ratio = 0.8)
 richness_density
 ```
 ```{r}
@@ -445,10 +466,16 @@ anova(model9, test = "Chisq")
 
 evenness_density <- ggplot(df, aes(shrub_density, evenness, color = microsite)) +
   geom_point(size = 0.5) +
-  scale_color_brewer(palette = "Set1") +
-  labs(x = "Shrub Density", y = "Evenness") + theme_classic() + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5),legend.title = element_blank(), axis.text = element_text(size = 10)) +
-  geom_smooth(method = lm, se = TRUE) + labs(tag = "B")
+  scale_color_brewer(palette = "Paired") +
+  labs(x = "Shrub Density per 20m radius", y = "Evenness") + theme_classic() + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5), axis.text = element_text(size = 10)) +
+  geom_smooth(method = lm, se = TRUE) + labs(tag = "C") + theme(legend.position = "none") + theme(aspect.ratio = 0.8)
 evenness_density
+
+
+density <- (abundance_density/richness_density/evenness_density) +  plot_layout(guides = 'collect') + theme(legend.position = 'right') + labs(color = "Microsite")
+
+print(density)
+
 ```
 ```{r}
 # Abundance v Ambient temp (No significance)
@@ -458,9 +485,9 @@ anova(model4, test = "Chisq")
 
 abundance_ambient <- ggplot(df, aes(mean_ambient_temp, abundance, color = microsite)) +
   geom_point(size = 0.5) +
-  scale_color_brewer(palette = "Set1") +
-  labs(x = "Ambient Temperature (°C)", y = "Animal Abundance") + theme_classic() + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5),legend.title = element_blank(), axis.text = element_text(size = 10)) +
-  geom_smooth(method = lm, se = TRUE) + labs(tag = "A")
+  scale_color_brewer(palette = "Paired") +
+  labs(x = "Ambient Temperature (°C)", y = "Abundance") + theme_classic() + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5), axis.text = element_text(size = 10)) +
+  geom_smooth(method = lm, se = TRUE) + labs(tag = "A") + labs(x = NULL) + theme(legend.position = "none") + theme(aspect.ratio = 0.8)
 abundance_ambient
 
 ```
@@ -474,23 +501,31 @@ emmeans(model5, pairwise~microsite|mean_ambient_temp) ### Higher richness at mim
 
 richness_ambient <- ggplot(df, aes(mean_ambient_temp, richness, color = microsite)) +
   geom_point(size = 0.5) +
-  scale_color_brewer(palette = "Set1") +
-  labs(x = "Ambient Temperature (°C)", y = "Richness") + theme_classic() + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5),legend.title = element_blank(), axis.text = element_text(size = 10)) +
-  geom_smooth(method = lm, se = TRUE) + labs(tag = "A")
+  scale_color_brewer(palette = "Paired") +
+  labs(x = "Ambient Temperature (°C)", y = "Richness") + theme_classic() + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5), axis.text = element_text(size = 10)) +
+  geom_smooth(method = lm, se = TRUE) + labs(tag = "B", x = NULL) + theme(legend.position = "none") + theme(aspect.ratio = 0.8)
 richness_ambient
 ```
 ```{r}
 ### Evenness v ambient temperature (No significance)
+library(patchwork)
 model6 <- glm(evenness~microsite*mean_ambient_temp + shrub_density, family = "poisson", data = df)
 model6 ### Need to run the model this way because the figures show that microsite and temp interaction is not significant.
 anova(model6, test = "Chisq")
 
 evenness_ambient <- ggplot(df, aes(mean_ambient_temp, evenness, color = microsite)) +
   geom_point(size = 0.5) +
-  scale_color_brewer(palette = "Set1") +
-  labs(x = "Ambient Temperature (°C)", y = "Evenness") + theme_classic() + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5),legend.title = element_blank(), axis.text = element_text(size = 10)) +
-  geom_smooth(method = lm, se = TRUE) + labs(tag = "A")
+  scale_color_brewer(palette = "Paired") +
+  labs(x = "Ambient Temperature (°C)", y = "Evenness") + theme_classic() + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5), axis.text = element_text(size = 10)) +
+  geom_smooth(method = lm, se = TRUE) + labs(tag = "C") + theme(aspect.ratio = 0.8)
 evenness_ambient
+
+ambient <- (abundance_ambient / richness_ambient / evenness_ambient) +
+  plot_layout(guides = 'collect') + 
+  theme(legend.position = 'right') + labs(color = "Microsite")
+
+print(ambient)
+
 ```
 ```{r}
 ### Abundance v ground temp (Need second opinion on this one!)
@@ -501,9 +536,9 @@ emmeans(model10, pairwise~microsite|mean_ground_temp)
 
 abundance_ground <- ggplot(df, aes(mean_ground_temp, abundance, color = microsite)) +
   geom_point(size = 0.5) +
-  scale_color_brewer(palette = "Set1") +
-  labs(x = "Ground Temperature (°C)", y = "Animal Abundance") + theme_classic() + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5),legend.title = element_blank(), axis.text = element_text(size = 10)) +
-  geom_smooth(method = lm, se = TRUE)  + labs(tag = "A")
+  scale_color_brewer(palette = "Paired") +
+  labs(x = "Ground Temperature (°C)", y = "Abundance") + theme_classic() + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5),legend.title = element_blank(), axis.text = element_text(size = 10)) +
+  geom_smooth(method = lm, se = TRUE)  + labs(tag = "A", x = NULL) + theme(legend.position = "none") + theme(aspect.ratio = 0.8)
 abundance_ground
 ```
 ```{r}
@@ -514,29 +549,39 @@ emmeans(model11, pairwise~microsite|mean_ground_temp)
 
 richness_ground <- ggplot(df, aes(mean_ground_temp, richness, color = microsite)) +
   geom_point(size = 0.5) +
-  scale_color_brewer(palette = "Set1") +
+  scale_color_brewer(palette = "Paired") +
   labs(x = "Ground Temperature (°C)", y = "Richness") + theme_classic() + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5), axis.text = element_text(size = 10)) +
-  geom_smooth(method = lm, se = TRUE) + labs(tag = "A")
+  geom_smooth(method = lm, se = TRUE) + labs(tag = "B", x = NULL) + theme(legend.position = "none") + theme(aspect.ratio = 0.8)
+
 richness_ground
 ```
 ```{r}
 ### Evenness v ground temp
+
 model12 <- glm(evenness~microsite*mean_ground_temp, family = poisson, data = df) ### Not poisson distribution! Gaussian!
 model12 
 anova(model12, test = "Chisq")
 
 evenness_ground <- ggplot(df, aes(mean_ground_temp, evenness, color = microsite)) +
   geom_point(size = 0.5) +
-  scale_color_brewer(palette = "Set1") +
+  scale_color_brewer(palette = "Paired") +
   labs(x = "Ground Temperature (°C)", y = "Evenness") + theme_classic() + theme(text = element_text(size = 12), panel.border = element_rect(color = "black", fill = NA, size = 1.5), axis.text = element_text(size = 10)) +
-  geom_smooth(method = lm, se = TRUE) + labs(tag = "A")
+  geom_smooth(method = lm, se = TRUE) + labs(tag = "C") + theme(legend.position = "none") + theme(aspect.ratio = 0.8)
 evenness_ground
+
+combined_plot <- (abundance_ground / richness_ground / evenness_ground) +
+ plot_layout(guides = 'collect') +
+  theme(legend.position = 'right') + labs(color = "Microsite")
+
+print(combined_plot)
+
 ```
 ### Maps
 ```{r}
 
 library(maps)
 library(ggmap)
+library(ggplot2)
 # Set your Google Maps API key
 api_key <- "AIzaSyBWSInlcZQ9hnFVEdCcZqD94IgOl95QhIs"
 register_google(key = api_key)
@@ -545,31 +590,40 @@ register_google(key = api_key)
 bounding_box <- c(left = -119.4, bottom = 34, right = -119.7, top = 36)
 
 # Option 1
-my_map_1 <- get_map(location = bounding_box, maptype = "terrain", source = "google", zoom = 11)
+my_map_1 <- get_map(location = bounding_box, maptype = "terrain", source = "google", zoom = 9)
 
-ggmap(my_map_1) +
-  geom_point(data = site, aes(x = long, y = lat, color = "red"), size = 3, shape = 16) +
+map1 <- ggmap(my_map_1) +
+  geom_point(data = site, aes(x = long, y = lat, color = "black"), size = 3, shape = 16) +
   labs(title = "Map with Data Points")
-
+map1
 
 # Option 2
 my_map_2 <- get_map(location = bounding_box, maptype = "roadmap", source = "google", zoom = 11)
 
 ggmap(my_map_2) +
-  geom_point(data = site, aes(x = long, y = lat, color = "red"), size = 3, shape = 16) +
+  geom_point(data = site, aes(x = long, y = lat, color = "black"), size = 3, shape = 16) +
   labs(title = "Map with Data Points")
 
 # Option 3
 my_map_3 <- get_map(location = bounding_box, maptype = "hybrid", source = "google", zoom = 11)
 
 ggmap(my_map_3) +
-  geom_point(data = site, aes(x = long, y = lat, color = "red"), size = 3, shape = 16) +
+  geom_point(data = site, aes(x = long, y = lat, color = "black"), size = 3, shape = 16) +
   labs(title = "Map with Data Points")
 
 # Option 4
-my_map_4 <- get_map(location = bounding_box, maptype = "satellite", source = "google", zoom = 11)
+my_map_4 <- get_map(location = bounding_box, maptype = "terrain", source = "google", zoom = 8)
 
-ggmap(my_map_4) +
-  geom_point(data = site, aes(x = long, y = lat, color = "red"), size = 3, shape = 16) +
-  labs(title = "Map with Data Points")
+figure_1 <- ggmap(my_map_4) +
+  geom_point(data = site, aes(x = long, y = lat), color = "black", size = 3, shape = 16) +
+  labs(x = "Longitude", y = "Latitude")
+figure_1
+
+my_map_5 <- get_map(location = bounding_box, maptype = "terrain", source = "google", zoom = 11)
+
+microsite <- read.csv("Chpt5_Site_Data.csv")
+figure_2 <- ggmap(my_map_5) +
+  geom_point(data = microsite, aes(x = long, y = lat), size = 3, shape = 16) + scale_colour_brewer(palette = "Paired")+
+  labs(x = "Longitude", y = "Latitude")
+figure_2
 ```
