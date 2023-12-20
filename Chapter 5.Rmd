@@ -352,33 +352,12 @@ ggplot(df, aes(x = microsite, y = abundance)) +
        y = "Abundance") + theme_classic()
 
 hist(df$abundance, main = "Histogram of Response Variable") ### data is skewed.
-transformed_response <- log(df$abundance + 1)
-hist(transformed_response, main = "Histogram of Transformed Response Variable")
-shapiro.test(transformed_response)
-qqnorm(transformed_response)
-boxplot(transformed_response, main = "Boxplot of Transformed Response Variable")
-
-log_data <- df
-log_data$log_abundance <- transformed_response
-
-log_model <- lm(transformed_response ~ microsite, data = log_data)
-summary(log_model)
-
-exp(coef(log_model))
-exp(confint(log_model))
-
-plot(predict(log_model), residuals(log_model),
-     xlab = "Predicted Values",
-     ylab = "Residuals",
-     main = "Predicted vs. Residuals Plot")
-
-
 
 model1 <- glm(abundance~microsite*site_code + mean_ambient_temp + shrub_density, family = "poisson", data = df)
 model1
 anova(model1, test = "Chisq")
-abundance_anova_result <- aov(abundance ~ microsite*site_code + mean_ambient_temp + shrub_density, data = df) ### Ground temp significantly varied
-print(summary(abundance_anova_result))
+abundance_emmeans_result <- emmeans(model1, pairwise ~ microsite|site_code)
+print(abundance_emmeans_result)
 ```
 
 
@@ -397,10 +376,30 @@ hist(df$richness, main = "Histogram of Response Variable") ### data is skewed.
 model2 <- glm(richness~microsite*site_code + mean_ambient_temp + shrub_density, family = "poisson", data = df)
 model2
 anova(model2, test = "Chisq")
-richness_anova_result <- aov(richness ~ microsite*site_code + mean_ambient_temp + shrub_density, data = df) ### Ground temp significantly varied
-print(summary(richness_anova_result))
 
-richness_emmeans_result <- emmeans(richness_anova_result, pairwise ~ microsite)
+
+richness_emmeans_result <- emmeans(model2, pairwise ~ microsite|site_code)
+print(richness_emmeans_result)
+```
+```{r}
+### Evenness
+
+ggplot(df, aes(x = microsite, y = evenness)) +
+  geom_boxplot() +
+  labs(
+       x = "Microsite",
+       y = "Evenness") + theme_classic()
+
+hist(df$evenness, main = "Histogram of Response Variable") ### data is skewed.
+
+
+
+model3 <- glm(evenness~microsite*site_code + mean_ambient_temp + shrub_density, family = "poisson", data = df)
+model3
+anova(model3, test = "Chisq")
+
+
+richness_emmeans_result <- emmeans(model2, pairwise ~ microsite|site_code)
 print(richness_emmeans_result)
 ```
 
